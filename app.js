@@ -16,6 +16,8 @@ let ravenInterval = 1000;
 let lastTime = 0;
 let score = 0;
 let gameOver = false;
+const gameOverSound = new Audio();
+gameOverSound.src = "./assets/game_over.wav";
 
 let ravens = [];
 let explosions = [];
@@ -70,6 +72,7 @@ class Raven {
 
     if (this.x < 0 - this.width) {
       gameOver = true;
+      gameOverSound.play();
     }
   }
   draw() {
