@@ -3,10 +3,18 @@ const canvas = document.getElementById("canvas1");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+ctx.font = "50px Impact";
+
+/** @type {HTMLCanvasElement} */
+const collisionCanvas = document.getElementById("collisionCanvas");
+const collisionCanvasCtx = collisionCanvas.getContext("2d");
+collisionCanvas.width = window.innerWidth;
+collisionCanvas.height = window.innerHeight;
 
 let timeToNextRaven = 0;
 let ravenInterval = 500;
 let lastTime = 0;
+let score = 0;
 
 let ravens = [];
 
@@ -31,6 +39,13 @@ class Raven {
 
     this.timeSinceFlap = 0;
     this.flapInterval = Math.random() * 50 + 50;
+
+    this.randomColors = [
+      Math.floor(Math.random() * 255),
+      Math.floor(Math.random() * 255),
+      Math.floor(Math.random() * 255),
+    ];
+    this.color = `rgb(${this.randomColors[0]},${this.randomColors[1]},${this.randomColors[2]})`;
   }
   update(deltaTime) {
     this.x -= this.directionX;
@@ -52,7 +67,8 @@ class Raven {
     }
   }
   draw() {
-    // ctx.fillRect(this.x, this.y, this.width, this.height);
+    collisionCanvasCtx.fillStyle = this.color;
+    collisionCanvasCtx.fillRect(this.x, this.y, this.width, this.height);
     ctx.drawImage(
       this.image,
       this.frame * this.spriteWidth,
@@ -67,8 +83,17 @@ class Raven {
   }
 }
 
+function drawScore() {
+  ctx.fillStyle = "black";
+  ctx.fillText(`Score: ${score}`, 50, 70);
+  ctx.fillStyle = "white";
+  ctx.fillText(`Score: ${score}`, 52, 72);
+}
+
 function animate(timestamp) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  collisionCanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
   let deltaTime = timestamp - lastTime; // calc much time has passed from last frame time
   lastTime = timestamp; // update last frame time with current frame time
   timeToNextRaven += deltaTime; // increment time to next raven with delta time
@@ -78,7 +103,14 @@ function animate(timestamp) {
     ravens.push(new Raven());
     // and reset time to next raven to 0 so that it adds the next raven after the certain interval
     timeToNextRaven = 0;
+
+    // sort ravens array bigger ones are at front and small ones are behind
+    ravens.sort((r1, r2) => {
+      return r1.width - r2.width;
+    });
   }
+
+  drawScore();
 
   [...ravens].forEach((raven) => raven.update(deltaTime));
   [...ravens].forEach((raven) => raven.draw());
@@ -86,5 +118,20 @@ function animate(timestamp) {
 
   requestAnimationFrame(animate);
 }
+
+window.addEventListener("click", (e) => {
+  const colors = collisionCanvasCtx.getImageData(e.x, e.y, 1, 1);
+
+  ravens.forEach((raven) => {
+    if (
+      raven.randomColors[0] === colors.data[0] &&
+      raven.randomColors[1] === colors.data[1] &&
+      raven.randomColors[2] === colors.data[2]
+    ) {
+      raven.markedForDeletion = true;
+      score++;
+    }
+  });
+});
 
 animate(0);
