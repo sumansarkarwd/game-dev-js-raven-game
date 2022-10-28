@@ -17,6 +17,7 @@ let lastTime = 0;
 let score = 0;
 
 let ravens = [];
+let explosions = [];
 
 class Raven {
   constructor() {
@@ -83,6 +84,52 @@ class Raven {
   }
 }
 
+class Explosion {
+  constructor(x, y, size) {
+    this.image = new Image();
+    this.image.src = "./assets/boom.png";
+    this.spriteWidth = 200;
+    this.spriteHeight = 179;
+    this.size = size;
+    this.x = x;
+    this.y = y;
+    this.frame = 0;
+    this.sound = new Audio();
+    this.sound.src = "./assets/boom.wav";
+    this.timeSinceFrame = 0;
+    this.frameInterval = 200;
+    this.markedForDeletion = false;
+  }
+
+  update(deltaTime) {
+    if (this.frame === 0) this.sound.play();
+
+    this.timeSinceFrame += deltaTime;
+    if (this.timeSinceFrame > this.frameInterval) {
+      if (this.frame > this.maxFrame) this.frame = 0;
+      else this.frame++;
+      this.timeSinceFrame = 0;
+
+      if (this.frame > 5) {
+        this.markedForDeletion = true;
+      }
+    }
+  }
+  draw() {
+    ctx.drawImage(
+      this.image,
+      this.frame * this.spriteWidth,
+      0,
+      this.spriteWidth,
+      this.spriteHeight,
+      this.x - this.size / 4,
+      this.y - this.size / 4,
+      this.size,
+      this.size
+    );
+  }
+}
+
 function drawScore() {
   ctx.fillStyle = "black";
   ctx.fillText(`Score: ${score}`, 50, 70);
@@ -112,9 +159,10 @@ function animate(timestamp) {
 
   drawScore();
 
-  [...ravens].forEach((raven) => raven.update(deltaTime));
-  [...ravens].forEach((raven) => raven.draw());
+  [...ravens, ...explosions].forEach((raven) => raven.update(deltaTime));
+  [...ravens, ...explosions].forEach((raven) => raven.draw());
   ravens = ravens.filter((raven) => !raven.markedForDeletion);
+  explosions = explosions.filter((explosion) => !explosion.markedForDeletion);
 
   requestAnimationFrame(animate);
 }
@@ -129,6 +177,7 @@ window.addEventListener("click", (e) => {
       raven.randomColors[2] === colors.data[2]
     ) {
       raven.markedForDeletion = true;
+      explosions.push(new Explosion(raven.x, raven.y, raven.width));
       score++;
     }
   });
