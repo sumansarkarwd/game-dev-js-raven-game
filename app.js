@@ -12,9 +12,10 @@ collisionCanvas.width = window.innerWidth;
 collisionCanvas.height = window.innerHeight;
 
 let timeToNextRaven = 0;
-let ravenInterval = 500;
+let ravenInterval = 1000;
 let lastTime = 0;
 let score = 0;
+let gameOver = false;
 
 let ravens = [];
 let explosions = [];
@@ -28,8 +29,8 @@ class Raven {
     this.height = this.spriteHeight * this.sizeModifier;
     this.x = canvas.width;
     this.y = Math.random() * (canvas.height - this.height);
-    this.directionX = Math.random() * 5 + 3;
-    this.directionY = Math.random() * 5 - 2.5;
+    this.directionX = Math.random() * 4 + 3;
+    this.directionY = Math.random() * 4 - 2.5;
     this.markedForDeletion = false;
 
     this.image = new Image();
@@ -65,6 +66,10 @@ class Raven {
       if (this.frame > this.maxFrame) this.frame = 0;
       else this.frame++;
       this.timeSinceFlap = 0;
+    }
+
+    if (this.x < 0 - this.width) {
+      gameOver = true;
     }
   }
   draw() {
@@ -137,6 +142,18 @@ function drawScore() {
   ctx.fillText(`Score: ${score}`, 52, 72);
 }
 
+function drawGameOver() {
+  ctx.textAlign = "center";
+  ctx.fillStyle = "black";
+  ctx.fillText(`Game Over 💀: ${score}`, canvas.width / 2, canvas.height / 2);
+  ctx.fillStyle = "white";
+  ctx.fillText(
+    `Game Over 💀: ${score}`,
+    canvas.width / 2 - 2,
+    canvas.height / 2 - 2
+  );
+}
+
 function animate(timestamp) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   collisionCanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -164,7 +181,8 @@ function animate(timestamp) {
   ravens = ravens.filter((raven) => !raven.markedForDeletion);
   explosions = explosions.filter((explosion) => !explosion.markedForDeletion);
 
-  requestAnimationFrame(animate);
+  if (!gameOver) requestAnimationFrame(animate);
+  else drawGameOver();
 }
 
 window.addEventListener("click", (e) => {
