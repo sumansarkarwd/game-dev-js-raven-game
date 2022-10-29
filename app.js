@@ -21,6 +21,7 @@ gameOverSound.src = "./assets/game_over.wav";
 
 let ravens = [];
 let explosions = [];
+let particles = [];
 
 class Raven {
   constructor() {
@@ -50,6 +51,8 @@ class Raven {
       Math.floor(Math.random() * 255),
     ];
     this.color = `rgb(${this.randomColors[0]},${this.randomColors[1]},${this.randomColors[2]})`;
+
+    this.hasTrail = Math.random() > 0.5;
   }
   update(deltaTime) {
     this.x -= this.directionX;
@@ -68,6 +71,12 @@ class Raven {
       if (this.frame > this.maxFrame) this.frame = 0;
       else this.frame++;
       this.timeSinceFlap = 0;
+
+      if (this.hasTrail) {
+        for (let i = 0; i < 5; i++) {
+          particles.push(new Particles(this.x, this.y, this.width, this.color));
+        }
+      }
     }
 
     if (this.x < 0 - this.width) {
@@ -138,6 +147,33 @@ class Explosion {
   }
 }
 
+class Particles {
+  constructor(x, y, size, color) {
+    this.size = size;
+    this.x = x + this.size * 0.33 + Math.random() * 50 - 25;
+    this.y = y + this.size * 0.33 + Math.random() * 50 - 25;
+    this.color = color;
+    this.radius = Math.random() * (this.size * 0.1);
+    this.maxRadius = Math.random() * 20 + 35;
+    this.markedForDeletion = false;
+    this.speedX = Math.random() * 1 + 0.5;
+  }
+  update() {
+    this.x += this.speedX;
+    this.radius += 0.3;
+    if (this.radius > this.maxRadius - 5) this.markedForDeletion = true;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = 1 - this.radius / this.maxRadius;
+    ctx.beginPath();
+    ctx.fillStyle = this.color;
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 function drawScore() {
   ctx.fillStyle = "black";
   ctx.fillText(`Score: ${score}`, 50, 70);
@@ -179,10 +215,13 @@ function animate(timestamp) {
 
   drawScore();
 
-  [...ravens, ...explosions].forEach((raven) => raven.update(deltaTime));
-  [...ravens, ...explosions].forEach((raven) => raven.draw());
+  [...particles, ...ravens, ...explosions].forEach((raven) =>
+    raven.update(deltaTime)
+  );
+  [...particles, ...ravens, ...explosions].forEach((raven) => raven.draw());
   ravens = ravens.filter((raven) => !raven.markedForDeletion);
   explosions = explosions.filter((explosion) => !explosion.markedForDeletion);
+  particles = particles.filter((particle) => !particle.markedForDeletion);
 
   if (!gameOver) requestAnimationFrame(animate);
   else drawGameOver();
